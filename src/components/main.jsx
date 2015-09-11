@@ -1,50 +1,78 @@
-var React            = require('react');
+var React = require('react');
 
 var Main = React.createClass({
      getInitialState() {
         return {
-            states: []
+            states: [],
+            overall:{
+                state:''
+            }
         };
     },
-
     render() {
         return (
-            <span>Wuahhha! <br/><code>{JSON.stringify(this.props.states, true)}</code></span>
+            <div>
+                <div className="widget__header">
+                    <span>
+                        State <span className="widget__header__subject">Reports</span>
+                    </span>
+                    <i className={`fa fa-eye state--${this.state.overall.stateName}`} />
+                </div>
+                <div className="widget__body">
+                    <p>{this.state.overall.updated}</p>
+                    <code>{JSON.stringify(this.state.states, true)}</code>
+                </div>
+            </div>
         );
     },
-    componentDidUpdate(){
+    componentWillUnmount() {
+        clearInterval(this.interval);
+    },
+    componentDidMount() {
+        this.interval = setInterval(this._tick, 4000);
+        this._updateIcon(0);
+    },
+    _tick() {
+        var sources = window.document.querySelectorAll('.widget[data-state]');
+        var componentStates = [].map.call(sources, (source) => {
+            return {
+                name: source.className.split(' ')[1],
+                state: Number(source.getAttribute('data-state'))
+            };
+        });
+        var allStateCodes = componentStates.map((state)=>{return state.state});
+        var overallState = Math.max.apply(null, allStateCodes);
+        var mostImportantCount = componentStates.filter(c => {return c.state===overallState;}).length;
+        this.setState({
+            states: componentStates,
+            overall:{
+                stateName: ['ok', 'warning', 'error'][overallState],
+                updated: new Date().toString()
+            }
+        });
 
-    	function updateIcon(state){
-    		var link = document.createElement('link');
-    		link.id="stateicon";
-		    link.type = 'image/x-icon';
-		    link.rel = 'shortcut icon';
-		    link.href = [
-		    	'http://www.favicon-generator.org/favicon-generator/htdocs/favicons/2015-09-10/6bb4ebe3a9a4bc3d1226c1dd2fd2af67.ico',
-		    	'http://www.favicon-generator.org/favicon-generator/htdocs/favicons/2015-09-10/95e52c9b83a04d026c89c5c515e6a2be.ico',
-		    	'http://www.favicon-generator.org/favicon-generator/htdocs/favicons/2015-09-10/e96b991c2b4394d230697ffa09600ad7.ico']
-		    	[state];
-		    if(document.getElementById('stateicon')){
-		    	document.getElementById('stateicon').remove();
-		    }
-		    document.getElementsByTagName('head')[0].appendChild(link);
-    	}
-
-    	var sources = window.document.querySelectorAll('.widget[data-state]');
-    	var componentStates = [].map.call(sources, (source) => {
-    		return {
-    			name: source.className.split(' ')[1],
-    			state: Number(source.getAttribute('data-state'))
-    		};
-    	});
-// TODO, does not work, should be able to do all the stuff from this function earlier, before render is called, not after.
-        this.props = {
-            states: componentStates
-        };
-
-    	console.log('reporters:', componentStates);
-
-    	updateIcon(Math.max.apply(null, componentStates.map((state)=>{return state.state})));
+        this._updateIcon(overallState);
+        this._updateTitle(mostImportantCount, componentStates.length);
+    },
+    _updateTitle(mostImportantCount, reportersCount){
+        this.orgTitle = this.orgTitle || window.document.title;
+        window.document.title = `${this.orgTitle} (${mostImportantCount}/${reportersCount})`;
+    },
+    _updateIcon(state) {
+        var link = document.createElement('link');
+        link.id="stateicon";
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+        link.href = [
+            '/imgs/favicon-chain.ico',
+            '/imgs/favicon-bolt.ico',
+            '/imgs/favicon-bomb.ico'
+            ]
+            [state];
+        if(document.getElementById('stateicon')){
+            document.getElementById('stateicon').remove();
+        }
+        document.getElementsByTagName('head')[0].appendChild(link);
     }
 });
 
