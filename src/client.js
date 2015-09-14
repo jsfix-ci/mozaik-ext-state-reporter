@@ -13,13 +13,6 @@ var client = function (mozaik) {
     mozaik.loadApiConfig(config);
 
     return {
-        favicon(parameters) {
-            return request.then((response)=>{
-               return {};
-            }).catch((reason)=>{
-                mozaik.logger.error(chalk.red(`[statereporter] failed: ${reason}`));
-            });
-        }
     };
 };
 
